@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>MotoGarage</title>
+<meta name="description" content="Motociklo priežiūra, kelionės, išlaidos ir patikra — KTM 950 Adventure.">
+<meta name="theme-color" content="#15171b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MotoGarage">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<style>
+  :root{
+    --bg:#15171b; --surface:#1d2026; --surface-2:#252a31; --raise:#2c323a;
+    --border:rgba(255,255,255,.09); --border-2:rgba(255,255,255,.15);
+    --text:#f1f3f5; --dim:#969ca6; --faint:#6b7079;
+    --accent:#ff6a1a; --accent-ink:#1a0d03; --accent-dim:#b64d13;
+    --danger:#ec5a43; --good:#3fb280;
+    --shadow:0 8px 30px rgba(0,0,0,.45);
+    --r:14px; --r-sm:10px;
+    --fs-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:light){
+    :root{
+      --bg:#f2f2ef; --surface:#ffffff; --surface-2:#f0f0ec; --raise:#e7e8e3;
+      --border:rgba(0,0,0,.10); --border-2:rgba(0,0,0,.16);
+      --text:#181a1d; --dim:#5d626b; --faint:#8a8f98;
+      --accent:#e85c10; --accent-ink:#fff; --accent-dim:#b8480c;
+      --danger:#cf3f2b; --good:#2f9468;
+      --shadow:0 8px 26px rgba(0,0,0,.14);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15171b; --surface:#1d2026; --surface-2:#252a31; --raise:#2c323a;
+    --border:rgba(255,255,255,.09); --border-2:rgba(255,255,255,.15);
+    --text:#f1f3f5; --dim:#969ca6; --faint:#6b7079;
+    --accent:#ff6a1a; --accent-ink:#1a0d03; --accent-dim:#b64d13;
+    --danger:#ec5a43; --good:#3fb280; --shadow:0 8px 30px rgba(0,0,0,.45);
+  }
+  :root[data-theme="light"]{
+    --bg:#f2f2ef; --surface:#ffffff; --surface-2:#f0f0ec; --raise:#e7e8e3;
+    --border:rgba(0,0,0,.10); --border-2:rgba(0,0,0,.16);
+    --text:#181a1d; --dim:#5d626b; --faint:#8a8f98;
+    --accent:#e85c10; --accent-ink:#fff; --accent-dim:#b8480c;
+    --danger:#cf3f2b; --good:#2f9468; --shadow:0 8px 26px rgba(0,0,0,.14);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:var(--fs-sans);-webkit-font-smoothing:antialiased}
+  body{min-height:100dvh}
+  button{font-family:inherit;cursor:pointer}
+  input,textarea,select{font-family:inherit}
+  ::selection{background:var(--accent);color:var(--accent-ink)}
+
+  .app{max-width:520px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;
+    background:var(--bg);position:relative}
+
+  /* top bar */
+  .topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+    padding:calc(env(safe-area-inset-top) + 12px) 18px 12px;display:flex;align-items:center;gap:12px}
+  .brand{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
+  .mark{width:26px;height:26px;border-radius:7px;background:var(--accent);flex:none;
+    display:grid;place-items:center;color:var(--accent-ink);font-weight:800;font-size:14px;
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 60%,#000)}
+  .brand h1{font-size:15px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  .brand h1 span{color:var(--accent)}
+  .theme-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);
+    background:var(--surface);color:var(--dim);display:grid;place-items:center;font-size:15px}
+  .theme-btn:active{transform:scale(.94)}
+
+  /* screen */
+  main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:18px 16px calc(96px + env(safe-area-inset-bottom))}
+  .screen{display:none;animation:fade .22s ease}
+  .screen.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+  .head h2{font-size:23px;font-weight:750;letter-spacing:-.01em}
+  .head .sub{font-size:12.5px;color:var(--dim);margin-top:3px;letter-spacing:.02em}
+  .add-btn{flex:none;border:none;background:var(--accent);color:var(--accent-ink);
+    font-weight:700;font-size:13.5px;padding:9px 15px;border-radius:11px;letter-spacing:.01em;
+    display:flex;align-items:center;gap:6px}
+  .add-btn:active{transform:scale(.96);background:var(--accent-dim)}
+  .add-btn .plus{font-size:16px;line-height:1;margin-top:-1px}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+
+  /* garage */
+  .photo{height:200px;border-radius:var(--r);overflow:hidden;position:relative;
+    background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center}
+  .photo img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;background:var(--surface-2)}
+  .fit-btn{position:absolute;left:10px;bottom:10px;background:color-mix(in srgb,var(--bg) 70%,transparent);
+    backdrop-filter:blur(6px);border:1px solid var(--border-2);border-radius:8px;padding:5px 10px;
+    font-size:11px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px}
+  .fit-btn:active{transform:scale(.95)}
+  .fit-btn svg{width:13px;height:13px}
+  .photo .ph{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--faint)}
+  .photo .ph svg{width:30px;height:30px}
+  .photo .cam-tag{position:absolute;right:10px;bottom:10px;background:color-mix(in srgb,var(--bg) 70%,transparent);
+    backdrop-filter:blur(6px);border:1px solid var(--border-2);border-radius:8px;padding:5px 9px;
+    font-size:11px;color:var(--text);display:flex;align-items:center;gap:5px}
+
+  .bike-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 2px 4px}
+  .bike-name{font-size:24px;font-weight:750;letter-spacing:-.015em;line-height:1.1}
+  .bike-model{font-size:13.5px;color:var(--dim);margin-top:4px;letter-spacing:.01em}
+  .edit-btn{flex:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);
+    background:var(--surface);color:var(--accent);display:grid;place-items:center}
+  .edit-btn:active{transform:scale(.94)}
+  .edit-btn svg{width:18px;height:18px}
+
+  .odo{margin-top:16px;background:linear-gradient(180deg,var(--surface),var(--surface-2));
+    border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden}
+  .odo::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+  .odo .lbl{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  .odo .val{font-size:34px;font-weight:800;letter-spacing:-.02em;margin-top:4px;
+    font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:8px}
+  .odo .val small{font-size:15px;font-weight:600;color:var(--dim)}
+
+  .stats{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px 14px}
+  .stat .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .stat .v{font-size:17px;font-weight:700;margin-top:5px;letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums}
+  .stat .v.accent{color:var(--accent)}
+  .stat .d{font-size:11.5px;color:var(--faint);margin-top:2px}
+
+  /* lists */
+  .list{display:flex;flex-direction:column;gap:10px}
+  .entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:14px 15px;display:flex;gap:12px;align-items:flex-start}
+  .entry .body{flex:1;min-width:0}
+  .entry .t{font-size:15px;font-weight:650;letter-spacing:-.005em}
+  .entry .m{font-size:12.5px;color:var(--dim);margin-top:3px;font-variant-numeric:tabular-nums}
+  .entry .n{font-size:13px;color:var(--faint);margin-top:7px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+  .entry .amt{font-size:15px;font-weight:750;color:var(--accent);font-variant-numeric:tabular-nums;flex:none}
+  .entry .del{flex:none;width:30px;height:30px;border-radius:8px;border:none;background:transparent;
+    color:var(--danger);display:grid;place-items:center;margin:-4px -6px 0 0}
+  .entry .del:active{background:color-mix(in srgb,var(--danger) 18%,transparent)}
+  .entry .del svg{width:17px;height:17px}
+  .cat-pill{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    padding:2px 7px;border-radius:6px;margin-bottom:6px;background:var(--surface-2);color:var(--dim)}
+  .cat-pill[data-c="fuel"]{background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent)}
+
+  .ride{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+  .ride img{width:100%;height:170px;object-fit:cover;display:block}
+  .ride .rb{padding:13px 15px}
+  .ride .rtop{display:flex;justify-content:space-between;align-items:center}
+  .ride .rdate{font-size:13px;font-weight:600}
+  .ride .rdist{font-size:14px;font-weight:750;color:var(--accent);font-variant-numeric:tabular-nums;margin-top:2px}
+
+  .empty{text-align:center;color:var(--faint);font-size:13.5px;line-height:1.6;
+    padding:44px 24px;border:1px dashed var(--border-2);border-radius:var(--r);background:var(--surface)}
+  .empty svg{width:34px;height:34px;margin-bottom:10px;opacity:.5}
+
+  /* costs summary */
+  .sumrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .sum{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 15px}
+  .sum .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .sum .v{font-size:22px;font-weight:800;margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .sum .v small{font-size:12px;font-weight:600;color:var(--dim)}
+
+  /* checklist */
+  .chk-prog{font-size:12.5px;color:var(--dim);margin-bottom:14px;letter-spacing:.02em}
+  .chk-prog b{color:var(--accent)}
+  .chk{display:flex;flex-direction:column;gap:9px}
+  .chk-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);
+    padding:14px 15px;display:flex;align-items:center;gap:13px}
+  .chk-item:active{background:var(--surface-2)}
+  .chk-box{width:23px;height:23px;border-radius:7px;border:2px solid var(--faint);flex:none;
+    display:grid;place-items:center;transition:.14s}
+  .chk-box svg{width:14px;height:14px;opacity:0;transform:scale(.6);transition:.14s}
+  .chk-item.on .chk-box{background:var(--accent);border-color:var(--accent)}
+  .chk-item.on .chk-box svg{opacity:1;transform:none;color:var(--accent-ink)}
+  .chk-item .lbl{font-size:14.5px;font-weight:550}
+  .chk-item.on .lbl{color:var(--dim);text-decoration:line-through}
+  .ghost-btn{border:1.5px solid var(--accent);background:transparent;color:var(--accent);
+    font-weight:700;font-size:13px;padding:8px 14px;border-radius:10px}
+  .ghost-btn:active{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+
+  /* bottom nav */
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:30;
+    background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px);
+    border-top:1px solid var(--border);display:flex;
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto}
+  .tab{flex:1;background:none;border:none;color:var(--faint);display:flex;flex-direction:column;
+    align-items:center;gap:4px;padding:5px 2px;border-radius:10px;transition:color .15s}
+  .tab svg{width:23px;height:23px}
+  .tab span{font-size:10px;font-weight:600;letter-spacing:.02em}
+  .tab.on{color:var(--accent)}
+  .tab:active{transform:scale(.93)}
+
+  /* modal / sheet */
+  .overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5);
+    display:none;align-items:flex-end;justify-content:center}
+  .overlay.show{display:flex;animation:ov .2s ease}
+  @keyframes ov{from{opacity:0}to{opacity:1}}
+  .sheet{width:100%;max-width:520px;max-height:92dvh;overflow-y:auto;background:var(--bg);
+    border-radius:20px 20px 0 0;border:1px solid var(--border);border-bottom:none;
+    padding:8px 18px calc(24px + env(safe-area-inset-bottom));box-shadow:var(--shadow);
+    animation:up .26s cubic-bezier(.2,.8,.2,1)}
+  @keyframes up{from{transform:translateY(100%)}to{transform:none}}
+  .grab{width:38px;height:4px;border-radius:2px;background:var(--border-2);margin:8px auto 6px}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;margin:6px 0 18px}
+  .sheet-head h3{font-size:20px;font-weight:750;letter-spacing:-.01em}
+  .x{width:32px;height:32px;border-radius:9px;border:none;background:var(--surface);color:var(--dim);
+    display:grid;place-items:center;font-size:18px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--dim);margin-bottom:6px}
+  .field input,.field textarea{width:100%;background:var(--surface);color:var(--text);
+    border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 13px;font-size:16px;outline:none}
+  .field input:focus,.field textarea:focus{border-color:var(--accent)}
+  .field textarea{min-height:74px;resize:vertical;line-height:1.5}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin:-4px 0 4px}
+  .chip{border:1px solid var(--border);background:var(--surface);color:var(--dim);
+    font-size:12.5px;padding:6px 12px;border-radius:20px;font-weight:600}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .photo-pick{border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;
+    background:var(--surface);display:grid;place-items:center;min-height:96px;margin-bottom:14px}
+  .photo-pick img{width:100%;max-height:180px;object-fit:cover;display:block}
+  .photo-pick .pp{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--faint);
+    font-size:12.5px;padding:22px}
+  .photo-pick .pp svg{width:22px;height:22px}
+  .save{width:100%;border:none;background:var(--accent);color:var(--accent-ink);font-weight:750;
+    font-size:15.5px;padding:14px;border-radius:12px;margin-top:6px;letter-spacing:.01em}
+  .save:active{transform:scale(.98);background:var(--accent-dim)}
+  .hint{font-size:12px;color:var(--faint);margin-top:10px;text-align:center;line-height:1.5}
+  input[type=file]{display:none}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark">M</div>
+      <h1>Moto<span>Garage</span></h1>
+      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v4</em>
+    </div>
+    <button class="theme-btn" id="themeBtn" aria-label="Perjungti temą">◐</button>
+  </div>
+
+  <main>
+    <!-- GARAGE -->
+    <section class="screen active" id="s-garage">
+      <div class="photo" id="bikePhoto" role="button" tabindex="0" aria-label="Pridėti motociklo nuotrauką">
+        <div class="ph" id="bikePhotoPh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.2"/><path d="M8 6l1.5-2h5L16 6"/></svg>
+          <span>Pridėti motociklo nuotrauką</span>
+        </div>
+      </div>
+      <div class="bike-row">
+        <div>
+          <div class="bike-name" id="bikeName">Mano KTM</div>
+          <div class="bike-model" id="bikeModel">2003 · KTM 950 Adventure</div>
+        </div>
+        <button class="edit-btn" id="editProfile" aria-label="Redaguoti">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+      </div>
+      <div class="odo">
+        <div class="lbl">Odometras</div>
+        <div class="val"><span id="odoVal">0</span><small>km</small></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Paskutinis servisas</div><div class="v" id="stLastSvc">—</div><div class="d" id="stLastSvcD"></div></div>
+        <div class="stat"><div class="k">Paskutinė kelionė</div><div class="v accent" id="stLastRide">—</div><div class="d" id="stLastRideD"></div></div>
+        <div class="stat"><div class="k">Kelionių</div><div class="v" id="stRides">0</div></div>
+        <div class="stat"><div class="k">Bendras atstumas</div><div class="v" id="stDist">0 km</div></div>
+      </div>
+    </section>
+
+    <!-- MAINTENANCE -->
+    <section class="screen" id="s-maint">
+      <div class="head">
+        <div><h2>Priežiūra</h2><div class="sub">Serviso ir remonto žurnalas</div></div>
+        <button class="add-btn" data-add="maint"><span class="plus">+</span>Pridėti</button>
+      </div>
+      <div class="list" id="maintList"></div>
+    </section>
+
+    <!-- RIDES -->
+    <section class="screen" id="s-rides">
+      <div class="head">
+        <div><h2>Kelionės</h2><div class="sub">Važiavimų dienoraštis</div></div>
+        <button class="add-btn" data-add="ride"><span class="plus">+</span>Pridėti</button>
+      </div>
+      <div class="list" id="rideList"></div>
+    </section>
+
+    <!-- COSTS -->
+    <section class="screen" id="s-costs">
+      <div class="head">
+        <div><h2>Išlaidos</h2><div class="sub">Kuras ir kitos išlaidos</div></div>
+        <button class="add-btn" data-add="cost"><span class="plus">+</span>Pridėti</button>
+      </div>
+      <div class="sumrow">
+        <div class="sum"><div class="k">Iš viso išleista</div><div class="v" id="sumTotal">0.00 <small>€</small></div></div>
+        <div class="sum"><div class="k">Vid. sąnaudos</div><div class="v" id="sumCons">—</div></div>
+      </div>
+      <div class="list" id="costList"></div>
+    </section>
+
+    <!-- CHECKLIST -->
+    <section class="screen" id="s-check">
+      <div class="head">
+        <div><h2>Patikra</h2><div class="sub">Prieš kelionę</div></div>
+        <button class="ghost-btn" id="resetChk">Atstatyti</button>
+      </div>
+      <div class="chk-prog" id="chkProg"></div>
+      <div class="chk" id="chkList"></div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="tab on" data-tab="garage">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="16" r="3.4"/><circle cx="18" cy="16" r="3.4"/><path d="M6 16l3-6h5l3 6M9 10l-1-3h-2M14 10l1.5 3"/></svg>
+      <span>Garažas</span>
+    </button>
+    <button class="tab" data-tab="maint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.3l-6 6 2.4 2.4 6-6a4 4 0 0 0 5.3-5.4l-2.5 2.5-2-2 2.5-2.5Z"/></svg>
+      <span>Priežiūra</span>
+    </button>
+    <button class="tab" data-tab="rides">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 20l-5-2V5l5 2 6-2 5 2v13l-5-2-6 2Z"/><path d="M9 7v13M15 5v13"/></svg>
+      <span>Kelionės</span>
+    </button>
+    <button class="tab" data-tab="costs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/></svg>
+      <span>Išlaidos</span>
+    </button>
+    <button class="tab" data-tab="check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>Patikra</span>
+    </button>
+  </nav>
+</div>
+
+<div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
+<input type="file" id="filePick" accept="image/*">
+
+<script>
+(function(){
+  "use strict";
+  var KEY="motogarage.v1";
+  var DEFAULT={
+    profile:{name:"Mano KTM",model:"KTM 950 Adventure",year:"2003",photo:null,odometer:0},
+    maintenance:[], rides:[], costs:[],
+    checklist:[
+      {id:"tires",label:"Padangų slėgis ir protektorius",checked:false},
+      {id:"chain",label:"Grandinės įtempimas ir tepimas",checked:false},
+      {id:"oil",label:"Variklio alyvos lygis",checked:false},
+      {id:"brakes",label:"Stabdžių skystis ir kaladėlės",checked:false},
+      {id:"lights",label:"Žibintai ir posūkiai",checked:false},
+      {id:"coolant",label:"Aušinimo skysčio lygis",checked:false},
+      {id:"luggage",label:"Bagažas pritvirtintas",checked:false},
+      {id:"fuel",label:"Kuro lygis",checked:false}
+    ]
+  };
+
+  var state=load();
+  function load(){
+    try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);return Object.assign({},clone(DEFAULT),p);}}catch(e){}
+    return clone(DEFAULT);
+  }
+  function clone(o){return JSON.parse(JSON.stringify(o));}
+  function save(){
+    try{localStorage.setItem(KEY,JSON.stringify(state));return true;}
+    catch(e){return false;}
+  }
+  function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+  function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function fmtN(n){return (Math.round(n)).toLocaleString("lt-LT");}
+  function fmtDate(iso){try{return new Date(iso).toLocaleDateString("lt-LT",{year:"numeric",month:"short",day:"numeric"});}catch(e){return "";}}
+  function money(n){return (Math.round(n*100)/100).toFixed(2);}
+  var $=function(s){return document.querySelector(s);};
+
+  /* ---------- theme ---------- */
+  var root=document.documentElement;
+  (function(){var t=localStorage.getItem("motogarage.theme");if(t)root.setAttribute("data-theme",t);})();
+  $("#themeBtn").addEventListener("click",function(){
+    var cur=root.getAttribute("data-theme");
+    if(!cur){cur=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";}
+    var next=cur==="dark"?"light":"dark";
+    root.setAttribute("data-theme",next);
+    localStorage.setItem("motogarage.theme",next);
+    setMeta();
+  });
+
+  /* ---------- tabs ---------- */
+  var tabs=document.querySelectorAll(".tab");
+  tabs.forEach(function(t){t.addEventListener("click",function(){showTab(t.getAttribute("data-tab"));});});
+  function showTab(name){
+    tabs.forEach(function(t){t.classList.toggle("on",t.getAttribute("data-tab")===name);});
+    document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
+    var map={garage:"s-garage",maint:"s-maint",rides:"s-rides",costs:"s-costs",check:"s-check"};
+    $("#"+map[name]).classList.add("active");
+    document.querySelector("main").scrollTop=0;
+  }
+
+  /* ---------- image resize ---------- */
+  function pickImage(cb){
+    var inp=$("#filePick");
+    inp.value="";
+    inp.onchange=function(){
+      var f=inp.files&&inp.files[0];if(!f)return;
+      var img=new Image();
+      img.onload=function(){
+        var max=720,w=img.width,h=img.height;
+        if(w>h&&w>max){h=Math.round(h*max/w);w=max;}
+        else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}
+        var c=document.createElement("canvas");c.width=w;c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        var q=0.55,data=c.toDataURL("image/jpeg",q);
+        while(data.length>700000&&q>0.3){q-=0.1;data=c.toDataURL("image/jpeg",q);}
+        cb(data);
+      };
+      img.onerror=function(){alert("Nepavyko nuskaityti nuotraukos.");};
+      var fr=new FileReader();
+      fr.onload=function(e){img.src=e.target.result;};
+      fr.readAsDataURL(f);
+    };
+    inp.click();
+  }
+
+  /* ---------- garage ---------- */
+  function renderGarage(){
+    var p=state.profile;
+    var ph=$("#bikePhoto");
+    if(p.photo){
+      var fit=p.photoFit||"contain";
+      var fitLabel=fit==="contain"?"Užpildyti":"Sutalpinti";
+      ph.innerHTML='<img src="'+p.photo+'" alt="Motociklas" style="object-fit:'+fit+'">'+
+        '<button class="fit-btn" data-fit type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>'+fitLabel+'</button>'+
+        '<div class="cam-tag" data-pick>Keisti nuotrauką</div>';
+    }
+    else{ph.innerHTML='<div class="ph" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.2"/><path d="M8 6l1.5-2h5L16 6"/></svg><span>Pridėti motociklo nuotrauką</span></div>';}
+    $("#bikeName").textContent=p.name||"Mano motociklas";
+    $("#bikeModel").textContent=(p.year?p.year+" · ":"")+(p.model||"");
+    $("#odoVal").textContent=fmtN(p.odometer||0);
+
+    var svc=state.maintenance[0];
+    $("#stLastSvc").textContent=svc?svc.service:"—";
+    $("#stLastSvcD").textContent=svc?fmtDate(svc.date):"";
+    var ride=state.rides[0];
+    $("#stLastRide").textContent=ride?fmtN(ride.distance)+" km":"—";
+    $("#stLastRideD").textContent=ride?fmtDate(ride.date):"";
+    $("#stRides").textContent=state.rides.length;
+    var total=state.rides.reduce(function(s,r){return s+(+r.distance||0);},0);
+    $("#stDist").textContent=fmtN(total)+" km";
+  }
+  $("#bikePhoto").addEventListener("click",function(e){
+    if(e.target.closest("[data-fit]")){
+      state.profile.photoFit=(state.profile.photoFit==="cover"?"contain":"cover");
+      save();renderGarage();return;
+    }
+    pickImage(function(d){
+      var prev=state.profile.photo;
+      state.profile.photo=d;
+      if(!save()){state.profile.photo=prev;alert("Nuotrauka per didelė telefono atminčiai. Pabandyk kitą arba mažesnę.");}
+      renderGarage();
+    });
+  });
+  $("#editProfile").addEventListener("click",openProfileSheet);
+
+  /* ---------- lists ---------- */
+  var trash='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>';
+
+  function renderMaint(){
+    var el=$("#maintList");
+    if(!state.maintenance.length){el.innerHTML=emptyBox("Dar nėra įrašų","Užfiksuok pirmą servisą mygtuku „+ Pridėti“.");return;}
+    el.innerHTML=state.maintenance.map(function(m){
+      return '<div class="entry"><div class="body"><div class="t">'+esc(m.service)+'</div>'+
+      '<div class="m">'+fmtDate(m.date)+' · '+fmtN(m.mileage||0)+' km</div>'+
+      (m.notes?'<div class="n">'+esc(m.notes)+'</div>':'')+
+      '</div><button class="del" data-del="maintenance" data-id="'+m.id+'" aria-label="Ištrinti">'+trash+'</button></div>';
+    }).join("");
+  }
+  function renderRides(){
+    var el=$("#rideList");
+    if(!state.rides.length){el.innerHTML=emptyBox("Dar nėra kelionių","Pridėk pirmą važiavimą mygtuku „+ Pridėti“.");return;}
+    el.innerHTML=state.rides.map(function(r){
+      return '<div class="ride">'+(r.photo?'<img src="'+r.photo+'" alt="">':'')+
+      '<div class="rb"><div class="rtop"><div class="rdate">'+fmtDate(r.date)+'</div>'+
+      '<button class="del" data-del="rides" data-id="'+r.id+'" aria-label="Ištrinti">'+trash+'</button></div>'+
+      '<div class="rdist">'+fmtN(r.distance)+' km</div>'+
+      (r.notes?'<div class="n" style="margin-top:6px;color:var(--dim)">'+esc(r.notes)+'</div>':'')+
+      '</div></div>';
+    }).join("");
+  }
+  var CATS={fuel:"Kuras",parts:"Dalys",service:"Servisas",insurance:"Draudimas",other:"Kita"};
+  function renderCosts(){
+    var total=state.costs.reduce(function(s,c){return s+(+c.amount||0);},0);
+    $("#sumTotal").innerHTML=money(total)+' <small>€</small>';
+    $("#sumCons").innerHTML=consumption();
+    var el=$("#costList");
+    if(!state.costs.length){el.innerHTML=emptyBox("Dar nėra išlaidų","Pridėk kuro pylimą ar kitą išlaidą.");return;}
+    el.innerHTML=state.costs.map(function(c){
+      var meta=[fmtDate(c.date)];
+      if(c.mileage)meta.push(fmtN(c.mileage)+" km");
+      if(c.liters)meta.push(c.liters+" L");
+      return '<div class="entry"><div class="body"><span class="cat-pill" data-c="'+c.category+'">'+(CATS[c.category]||c.category)+'</span>'+
+      '<div class="m">'+meta.join(" · ")+'</div>'+
+      (c.notes?'<div class="n">'+esc(c.notes)+'</div>':'')+
+      '</div><div class="amt">'+money(c.amount)+' €</div>'+
+      '<button class="del" data-del="costs" data-id="'+c.id+'" aria-label="Ištrinti">'+trash+'</button></div>';
+    }).join("");
+  }
+  function consumption(){
+    var f=state.costs.filter(function(c){return c.category==="fuel"&&c.mileage&&c.liters;})
+      .sort(function(a,b){return a.mileage-b.mileage;});
+    var samples=[];
+    for(var i=1;i<f.length;i++){
+      var dkm=f[i].mileage-f[i-1].mileage;
+      if(dkm>0)samples.push((+f[i].liters)/dkm*100);
+    }
+    if(!samples.length)return "—";
+    var avg=samples.reduce(function(a,b){return a+b;},0)/samples.length;
+    return (Math.round(avg*10)/10).toFixed(1)+' <small>L/100km</small>';
+  }
+  function renderCheck(){
+    var done=state.checklist.filter(function(i){return i.checked;}).length;
+    $("#chkProg").innerHTML='Pažymėta <b>'+done+'</b> iš '+state.checklist.length;
+    $("#chkList").innerHTML=state.checklist.map(function(i){
+      return '<div class="chk-item'+(i.checked?' on':'')+'" data-chk="'+i.id+'">'+
+      '<div class="chk-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>'+
+      '<div class="lbl">'+esc(i.label)+'</div></div>';
+    }).join("");
+  }
+  function emptyBox(t,s){
+    return '<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div style="font-weight:650;color:var(--dim)">'+t+'</div><div style="margin-top:5px">'+s+'</div></div>';
+  }
+
+  /* delete + checklist (event delegation) */
+  document.querySelector("main").addEventListener("click",function(e){
+    var del=e.target.closest("[data-del]");
+    if(del){
+      var arr=del.getAttribute("data-del"),id=del.getAttribute("data-id");
+      state[arr]=state[arr].filter(function(x){return x.id!==id;});
+      save();renderAll();return;
+    }
+    var chk=e.target.closest("[data-chk]");
+    if(chk){
+      var cid=chk.getAttribute("data-chk");
+      state.checklist.forEach(function(i){if(i.id===cid)i.checked=!i.checked;});
+      save();renderCheck();return;
+    }
+  });
+  $("#resetChk").addEventListener("click",function(){
+    state.checklist.forEach(function(i){i.checked=false;});save();renderCheck();
+  });
+
+  /* ---------- add buttons ---------- */
+  document.querySelectorAll("[data-add]").forEach(function(b){
+    b.addEventListener("click",function(){openSheet(b.getAttribute("data-add"));});
+  });
+
+  /* ---------- sheet / forms ---------- */
+  var overlay=$("#overlay"),sheet=$("#sheet");
+  function closeSheet(){overlay.classList.remove("show");sheet.innerHTML="";}
+  overlay.addEventListener("click",function(e){if(e.target===overlay)closeSheet();});
+
+  function head(title){
+    return '<div class="grab"></div><div class="sheet-head"><h3>'+title+'</h3><button class="x" data-x aria-label="Uždaryti">✕</button></div>';
+  }
+  function fieldText(id,label,ph,opts){opts=opts||{};
+    return '<div class="field"><label for="'+id+'">'+label+'</label>'+
+      (opts.area?'<textarea id="'+id+'" placeholder="'+ph+'">'+(opts.val||"")+'</textarea>'
+      :'<input id="'+id+'" type="'+(opts.num?"text":"text")+'" '+(opts.num?'inputmode="decimal"':'')+' placeholder="'+ph+'" value="'+(opts.val||"")+'">')+'</div>';
+  }
+  function bind(){
+    var x=sheet.querySelector("[data-x]");if(x)x.addEventListener("click",closeSheet);
+  }
+  function num(v){v=parseFloat(String(v).replace(",","."));return isFinite(v)?v:0;}
+
+  function openProfileSheet(){
+    var p=state.profile;
+    sheet.innerHTML=head("Motociklo profilis")+
+      fieldText("pName","Pavadinimas","pvz. Mano KTM",{val:esc(p.name)})+
+      fieldText("pModel","Modelis","pvz. KTM 950 Adventure",{val:esc(p.model)})+
+      fieldText("pYear","Metai","pvz. 2003",{val:esc(p.year),num:true})+
+      fieldText("pOdo","Odometras (km)","pvz. 42000",{val:p.odometer||"",num:true})+
+      '<button class="save" data-save>Išsaugoti</button>';
+    overlay.classList.add("show");bind();
+    sheet.querySelector("[data-save]").addEventListener("click",function(){
+      state.profile.name=sheet.querySelector("#pName").value.trim()||"Mano motociklas";
+      state.profile.model=sheet.querySelector("#pModel").value.trim();
+      state.profile.year=sheet.querySelector("#pYear").value.trim();
+      state.profile.odometer=num(sheet.querySelector("#pOdo").value);
+      save();renderGarage();closeSheet();
+    });
+  }
+
+  function openSheet(type){
+    if(type==="maint"){
+      var sugg=["Alyvos keitimas","Grandinė ir žvaigždutės","Oro filtras","Stabdžių kaladėlės","Padangos","Vožtuvų tarpai"];
+      sheet.innerHTML=head("Naujas priežiūros įrašas")+
+        fieldText("mSvc","Darbas","pvz. Alyvos keitimas",{})+
+        '<div class="chips" id="mChips">'+sugg.map(function(s){return '<button class="chip" type="button" data-sug="'+esc(s)+'">'+esc(s)+'</button>';}).join("")+'</div>'+
+        fieldText("mKm","Odometras (km)","pvz. 42000",{num:true})+
+        fieldText("mNote","Pastabos","Dalys, servisas, kas svarbu",{area:true})+
+        '<button class="save" data-save>Išsaugoti</button>';
+      overlay.classList.add("show");bind();
+      sheet.querySelectorAll("[data-sug]").forEach(function(c){c.addEventListener("click",function(){sheet.querySelector("#mSvc").value=c.getAttribute("data-sug");});});
+      sheet.querySelector("[data-save]").addEventListener("click",function(){
+        var s=sheet.querySelector("#mSvc").value.trim();if(!s){sheet.querySelector("#mSvc").focus();return;}
+        state.maintenance.unshift({id:uid(),date:new Date().toISOString(),service:s,mileage:num(sheet.querySelector("#mKm").value),notes:sheet.querySelector("#mNote").value.trim()});
+        sortByDate(state.maintenance);save();renderAll();closeSheet();
+      });
+    }
+    else if(type==="ride"){
+      var photo={v:null};
+      sheet.innerHTML=head("Nauja kelionė")+
+        fieldText("rKm","Atstumas (km)","pvz. 180",{num:true})+
+        fieldText("rNote","Pastabos","Maršrutas, įspūdžiai, oras",{area:true})+
+        '<label style="display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px">Nuotrauka</label>'+
+        '<div class="photo-pick" id="rPick"><div class="pp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.2"/><path d="M8 6l1.5-2h5L16 6"/></svg>Pridėti nuotrauką</div></div>'+
+        '<button class="save" data-save>Išsaugoti</button>';
+      overlay.classList.add("show");bind();
+      sheet.querySelector("#rPick").addEventListener("click",function(){
+        pickImage(function(d){photo.v=d;sheet.querySelector("#rPick").innerHTML='<img src="'+d+'" alt="">';});
+      });
+      sheet.querySelector("[data-save]").addEventListener("click",function(){
+        var km=num(sheet.querySelector("#rKm").value);if(!km){sheet.querySelector("#rKm").focus();return;}
+        state.rides.unshift({id:uid(),date:new Date().toISOString(),distance:km,notes:sheet.querySelector("#rNote").value.trim(),photo:photo.v});
+        sortByDate(state.rides);
+        if(!save()&&photo.v){state.rides[0].photo=null;save();alert("Kelionė išsaugota, bet nuotrauka per didelė atminčiai — įrašyta be jos.");}
+        renderAll();closeSheet();
+      });
+    }
+    else if(type==="cost"){
+      var cat={v:"fuel"};
+      sheet.innerHTML=head("Nauja išlaida")+
+        '<div class="chips" id="cChips" style="margin-bottom:14px">'+Object.keys(CATS).map(function(k){return '<button class="chip'+(k==="fuel"?" on":"")+'" type="button" data-cat="'+k+'">'+CATS[k]+'</button>';}).join("")+'</div>'+
+        fieldText("cAmt","Suma (€)","pvz. 45.50",{num:true})+
+        '<div id="cLitersWrap">'+fieldText("cLit","Litrai","pvz. 18.2",{num:true})+'</div>'+
+        fieldText("cKm","Odometras (km)","nebūtina",{num:true})+
+        fieldText("cNote","Pastabos","nebūtina",{area:true})+
+        '<button class="save" data-save>Išsaugoti</button>';
+      overlay.classList.add("show");bind();
+      sheet.querySelectorAll("[data-cat]").forEach(function(c){c.addEventListener("click",function(){
+        cat.v=c.getAttribute("data-cat");
+        sheet.querySelectorAll("[data-cat]").forEach(function(x){x.classList.toggle("on",x===c);});
+        sheet.querySelector("#cLitersWrap").style.display=cat.v==="fuel"?"":"none";
+      });});
+      sheet.querySelector("[data-save]").addEventListener("click",function(){
+        var amt=num(sheet.querySelector("#cAmt").value);if(!amt){sheet.querySelector("#cAmt").focus();return;}
+        var lit=cat.v==="fuel"?num(sheet.querySelector("#cLit").value):0;
+        state.costs.unshift({id:uid(),date:new Date().toISOString(),category:cat.v,amount:amt,liters:lit||null,mileage:num(sheet.querySelector("#cKm").value)||null,notes:sheet.querySelector("#cNote").value.trim()});
+        sortByDate(state.costs);save();renderAll();closeSheet();
+      });
+    }
+  }
+  function sortByDate(a){a.sort(function(x,y){return (y.date||"").localeCompare(x.date||"");});}
+
+  /* ---------- render all ---------- */
+  function renderAll(){renderGarage();renderMaint();renderRides();renderCosts();renderCheck();}
+
+  /* ---------- PWA / home-screen meta (injected at runtime) ---------- */
+  function setMeta(){
+    var dark=(root.getAttribute("data-theme")||(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"))==="dark";
+    setMetaTag("theme-color",dark?"#15171b":"#f2f2ef");
+  }
+  function setMetaTag(name,content){
+    var m=document.querySelector('meta[name="'+name+'"]');
+    if(!m){m=document.createElement("meta");m.setAttribute("name",name);document.head.appendChild(m);}
+    m.setAttribute("content",content);
+  }
+  setMeta();
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
