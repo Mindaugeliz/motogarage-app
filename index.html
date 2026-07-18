@@ -244,7 +244,7 @@
     <div class="brand">
       <div class="mark">M</div>
       <h1>Moto<span>Garage</span></h1>
-      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v8</em>
+      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v9</em>
     </div>
     <button class="theme-btn" id="themeBtn" aria-label="Perjungti temą">◐</button>
   </div>
@@ -492,7 +492,9 @@
       return '<div class="entry"><div class="body"><div class="t">'+esc(m.service)+'</div>'+
       '<div class="m">'+fmtDate(m.date)+' · '+fmtN(m.mileage||0)+' km</div>'+
       (m.notes?'<div class="n">'+esc(m.notes)+'</div>':'')+
-      '</div><button class="del" data-del="maintenance" data-id="'+m.id+'" aria-label="Ištrinti">'+trash+'</button></div>';
+      '</div>'+
+      (m.amount?'<div class="amt">'+money(m.amount)+' €</div>':'')+
+      '<button class="del" data-del="maintenance" data-id="'+m.id+'" aria-label="Ištrinti">'+trash+'</button></div>';
     }).join("");
   }
   function renderRides(){
@@ -508,21 +510,33 @@
     }).join("");
   }
   var CATS={fuel:"Kuras",parts:"Dalys",service:"Servisas",insurance:"Draudimas",other:"Kita"};
+  function maintCosts(){
+    return state.maintenance.filter(function(m){return m.amount>0;}).map(function(m){
+      return {id:"m:"+m.id,date:m.date,category:"service",amount:m.amount,mileage:m.mileage||null,liters:null,notes:m.service,_fromMaint:true};
+    });
+  }
   function renderCosts(){
-    var total=state.costs.reduce(function(s,c){return s+(+c.amount||0);},0);
+    var maint=maintCosts();
+    var all=state.costs.concat(maint);
+    var total=all.reduce(function(s,c){return s+(+c.amount||0);},0);
     $("#sumTotal").innerHTML=money(total)+' <small>€</small>';
     $("#sumCons").innerHTML=consumption();
     var el=$("#costList");
-    if(!state.costs.length){el.innerHTML=emptyBox("Dar nėra išlaidų","Pridėk kuro pylimą ar kitą išlaidą.");return;}
-    el.innerHTML=state.costs.map(function(c){
+    if(!all.length){el.innerHTML=emptyBox("Dar nėra išlaidų","Pridėk kuro pylimą ar kitą išlaidą.");return;}
+    all.sort(function(x,y){return (y.date||"").localeCompare(x.date||"");});
+    el.innerHTML=all.map(function(c){
       var meta=[fmtDate(c.date)];
       if(c.mileage)meta.push(fmtN(c.mileage)+" km");
       if(c.liters)meta.push(c.liters+" L");
-      return '<div class="entry"><div class="body"><span class="cat-pill" data-c="'+c.category+'">'+(CATS[c.category]||c.category)+'</span>'+
+      var tag=(CATS[c.category]||c.category)+(c._fromMaint?" · iš priežiūros":"");
+      return '<div class="entry"><div class="body"><span class="cat-pill" data-c="'+c.category+'">'+tag+'</span>'+
       '<div class="m">'+meta.join(" · ")+'</div>'+
       (c.notes?'<div class="n">'+esc(c.notes)+'</div>':'')+
       '</div><div class="amt">'+money(c.amount)+' €</div>'+
-      '<button class="del" data-del="costs" data-id="'+c.id+'" aria-label="Ištrinti">'+trash+'</button></div>';
+      (c._fromMaint
+        ?'<span class="del" style="color:var(--faint)" title="Tvarkoma Priežiūros skiltyje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:17px;height:17px"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.3l-6 6 2.4 2.4 6-6a4 4 0 0 0 5.3-5.4l-2.5 2.5-2-2 2.5-2.5Z"/></svg></span>'
+        :'<button class="del" data-del="costs" data-id="'+c.id+'" aria-label="Ištrinti">'+trash+'</button>')+
+      '</div>';
     }).join("");
   }
   function consumption(){
@@ -617,13 +631,16 @@
         fieldText("mSvc","Darbas","pvz. Alyvos keitimas",{})+
         '<div class="chips" id="mChips">'+sugg.map(function(s){return '<button class="chip" type="button" data-sug="'+esc(s)+'">'+esc(s)+'</button>';}).join("")+'</div>'+
         fieldText("mKm","Odometras (km)","pvz. 42000",{num:true})+
+        fieldText("mAmt","Išleista suma (€)","nebūtina, pvz. 45.00",{num:true})+
         fieldText("mNote","Pastabos","Dalys, servisas, kas svarbu",{area:true})+
+        '<div class="hint">Suma automatiškai atsiras Išlaidų skiltyje.</div>'+
         '<button class="save" data-save>Išsaugoti</button>';
       overlay.classList.add("show");bind();
       sheet.querySelectorAll("[data-sug]").forEach(function(c){c.addEventListener("click",function(){sheet.querySelector("#mSvc").value=c.getAttribute("data-sug");});});
       sheet.querySelector("[data-save]").addEventListener("click",function(){
         var s=sheet.querySelector("#mSvc").value.trim();if(!s){sheet.querySelector("#mSvc").focus();return;}
-        state.maintenance.unshift({id:uid(),date:new Date().toISOString(),service:s,mileage:num(sheet.querySelector("#mKm").value),notes:sheet.querySelector("#mNote").value.trim()});
+        var amt=num(sheet.querySelector("#mAmt").value);
+        state.maintenance.unshift({id:uid(),date:new Date().toISOString(),service:s,mileage:num(sheet.querySelector("#mKm").value),amount:amt||null,notes:sheet.querySelector("#mNote").value.trim()});
         sortByDate(state.maintenance);save();renderAll();closeSheet();
       });
     }
