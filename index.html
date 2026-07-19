@@ -244,7 +244,7 @@
     <div class="brand">
       <div class="mark">M</div>
       <h1>Moto<span>Garage</span></h1>
-      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v10</em>
+      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v11</em>
     </div>
     <button class="theme-btn" id="themeBtn" aria-label="Perjungti temą">◐</button>
   </div>
@@ -537,7 +537,7 @@
       '</div><div class="amt">'+money(c.amount)+' €</div>'+
       (c._fromMaint
         ?'<span class="del" style="color:var(--faint)" title="Tvarkoma Priežiūros skiltyje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:17px;height:17px"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.3l-6 6 2.4 2.4 6-6a4 4 0 0 0 5.3-5.4l-2.5 2.5-2-2 2.5-2.5Z"/></svg></span>'
-        :'<button class="del" data-del="costs" data-id="'+c.id+'" aria-label="Ištrinti">'+trash+'</button>')+
+        :'<button class="del" data-editcost="'+c.id+'" style="color:var(--accent)" aria-label="Redaguoti">'+pencil+'</button><button class="del" data-del="costs" data-id="'+c.id+'" aria-label="Ištrinti">'+trash+'</button>')+
       '</div>';
     }).join("");
   }
@@ -573,6 +573,13 @@
       var eid=edm.getAttribute("data-editmaint");
       var item=state.maintenance.filter(function(x){return x.id===eid;})[0];
       if(item)openSheet("maint",item);
+      return;
+    }
+    var edc=e.target.closest("[data-editcost]");
+    if(edc){
+      var cidE=edc.getAttribute("data-editcost");
+      var citem=state.costs.filter(function(x){return x.id===cidE;})[0];
+      if(citem)openSheet("cost",citem);
       return;
     }
     var del=e.target.closest("[data-del]");
@@ -678,13 +685,13 @@
       });
     }
     else if(type==="cost"){
-      var cat={v:"fuel"};
-      sheet.innerHTML=head("Nauja išlaida")+
-        '<div class="chips" id="cChips" style="margin-bottom:14px">'+Object.keys(CATS).map(function(k){return '<button class="chip'+(k==="fuel"?" on":"")+'" type="button" data-cat="'+k+'">'+CATS[k]+'</button>';}).join("")+'</div>'+
-        fieldText("cAmt","Suma (€)","pvz. 45.50",{num:true})+
-        '<div id="cLitersWrap">'+fieldText("cLit","Litrai","pvz. 18.2",{num:true})+'</div>'+
-        fieldText("cKm","Odometras (km)","nebūtina",{num:true})+
-        fieldText("cNote","Pastabos","nebūtina",{area:true})+
+      var cat={v:(ed?ed.category:"fuel")};
+      sheet.innerHTML=head(ed?"Redaguoti išlaidą":"Nauja išlaida")+
+        '<div class="chips" id="cChips" style="margin-bottom:14px">'+Object.keys(CATS).map(function(k){return '<button class="chip'+(k===cat.v?" on":"")+'" type="button" data-cat="'+k+'">'+CATS[k]+'</button>';}).join("")+'</div>'+
+        fieldText("cAmt","Suma (€)","pvz. 45.50",{num:true,val:ed?ed.amount:""})+
+        '<div id="cLitersWrap"'+(cat.v==="fuel"?"":' style="display:none"')+'>'+fieldText("cLit","Litrai","pvz. 18.2",{num:true,val:ed&&ed.liters?ed.liters:""})+'</div>'+
+        fieldText("cKm","Odometras (km)","nebūtina",{num:true,val:ed&&ed.mileage?ed.mileage:""})+
+        fieldText("cNote","Pastabos","nebūtina",{area:true,val:ed?esc(ed.notes):""})+
         '<button class="save" data-save>Išsaugoti</button>';
       overlay.classList.add("show");bind();
       sheet.querySelectorAll("[data-cat]").forEach(function(c){c.addEventListener("click",function(){
@@ -695,7 +702,11 @@
       sheet.querySelector("[data-save]").addEventListener("click",function(){
         var amt=num(sheet.querySelector("#cAmt").value);if(!amt){sheet.querySelector("#cAmt").focus();return;}
         var lit=cat.v==="fuel"?num(sheet.querySelector("#cLit").value):0;
-        state.costs.unshift({id:uid(),date:new Date().toISOString(),category:cat.v,amount:amt,liters:lit||null,mileage:num(sheet.querySelector("#cKm").value)||null,notes:sheet.querySelector("#cNote").value.trim()});
+        if(ed){
+          ed.category=cat.v;ed.amount=amt;ed.liters=lit||null;ed.mileage=num(sheet.querySelector("#cKm").value)||null;ed.notes=sheet.querySelector("#cNote").value.trim();
+        }else{
+          state.costs.unshift({id:uid(),date:new Date().toISOString(),category:cat.v,amount:amt,liters:lit||null,mileage:num(sheet.querySelector("#cKm").value)||null,notes:sheet.querySelector("#cNote").value.trim()});
+        }
         sortByDate(state.costs);save();renderAll();closeSheet();
       });
     }
