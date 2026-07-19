@@ -309,7 +309,7 @@
     <div class="brand">
       <div class="mark">M</div>
       <h1>Moto<span>Garage</span></h1>
-      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v17</em>
+      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v18</em>
     </div>
     <button class="theme-btn" id="themeBtn" aria-label="Perjungti temą">◐</button>
   </div>
@@ -1085,23 +1085,29 @@
       var ctx=canvas.getContext("2d");
       stage.appendChild(canvas);
 
-      var fps=15, frameDur=1000/fps;
-      var frame=0, startTime=null;
+      var fps=18, frameDur=1000/fps;
+      var startTime=null;
 
       function draw(t){
         if(startTime===null)startTime=t;
         var elapsed=t-startTime;
-        var targetFrame=Math.floor(elapsed/frameDur);
-        if(targetFrame>=total){
+        var pos=elapsed/frameDur;
+        var frame=Math.floor(pos);
+        if(frame>=total-1){
           ctx.clearRect(0,0,300,290);
+          ctx.globalAlpha=1;
           ctx.drawImage(loadedImgs[total-1],0,0);
           hideSplash();
           return;
         }
-        if(targetFrame!==frame||elapsed===0){
-          frame=targetFrame;
-          ctx.clearRect(0,0,300,290);
-          ctx.drawImage(loadedImgs[frame],0,0);
+        var mix=pos-frame;
+        ctx.clearRect(0,0,300,290);
+        ctx.globalAlpha=1;
+        ctx.drawImage(loadedImgs[frame],0,0);
+        if(mix>0){
+          ctx.globalAlpha=mix;
+          ctx.drawImage(loadedImgs[frame+1],0,0);
+          ctx.globalAlpha=1;
         }
         requestAnimationFrame(draw);
       }
