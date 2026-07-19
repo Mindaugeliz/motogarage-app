@@ -134,6 +134,35 @@
   .stat .v.accent{color:var(--accent)}
   .stat .d{font-size:11.5px;color:var(--faint);margin-top:2px}
 
+  .sec-head{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 10px}
+  .sec-head h3{font-size:16px;font-weight:700;letter-spacing:.01em}
+  .mini-add{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);
+    color:var(--accent);display:grid;place-items:center;font-size:0}
+  .mini-add .plus{font-size:18px;line-height:1}
+  .mini-add:active{transform:scale(.94)}
+  .rem{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px;
+    display:flex;align-items:center;gap:12px;border-left:3px solid var(--good)}
+  .rem.warn{border-left-color:var(--accent)} .rem.over{border-left-color:var(--danger)}
+  .rem .rl{flex:1;min-width:0}
+  .rem .rt{font-size:14.5px;font-weight:600}
+  .rem .rs{font-size:12.5px;color:var(--dim);margin-top:2px}
+  .rem .rv{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .rem .rv.good{color:var(--good)} .rem .rv.warn{color:var(--accent)} .rem .rv.over{color:var(--danger)}
+  .rem .del{flex:none;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--danger);display:grid;place-items:center}
+  .rem .del svg{width:16px;height:16px}
+  .ref-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px 15px;margin-bottom:12px}
+  .ref-card h4{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:14px 0 8px}
+  .ref-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--border);font-size:14px}
+  .ref-row:first-of-type{border-top:none}
+  .ref-row .rk{color:var(--dim)} .ref-row .rvv{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+  .ref-note{font-size:12px;color:var(--faint);line-height:1.5;margin:4px 2px 20px}
+  .gallery{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+  .gallery img{height:150px;width:auto;border-radius:8px;flex:none;object-fit:cover}
+  .thumb-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .thumb-row .th{position:relative;width:70px;height:70px;border-radius:8px;overflow:hidden}
+  .thumb-row .th img{width:100%;height:100%;object-fit:cover}
+  .thumb-row .th button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:13px;line-height:1;display:grid;place-items:center}
+
   /* lists */
   .list{display:flex;flex-direction:column;gap:10px}
   .entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
@@ -244,7 +273,7 @@
     <div class="brand">
       <div class="mark">M</div>
       <h1>Moto<span>Garage</span></h1>
-      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v11</em>
+      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v12</em>
     </div>
     <button class="theme-btn" id="themeBtn" aria-label="Perjungti temą">◐</button>
   </div>
@@ -278,6 +307,12 @@
         <div class="stat"><div class="k">Kelionių</div><div class="v" id="stRides">0</div></div>
         <div class="stat"><div class="k">Bendras atstumas</div><div class="v" id="stDist">0 km</div></div>
       </div>
+
+      <div class="sec-head"><h3>Priminimai</h3><button class="mini-add" data-add="reminder"><span class="plus">+</span></button></div>
+      <div class="list" id="reminderList"></div>
+
+      <div class="sec-head"><h3>Šiais metais</h3></div>
+      <div class="stats" id="yearStats"></div>
     </section>
 
     <!-- MAINTENANCE -->
@@ -320,6 +355,14 @@
       <div class="chk-prog" id="chkProg"></div>
       <div class="chk" id="chkList"></div>
     </section>
+
+    <!-- REFERENCE -->
+    <section class="screen" id="s-ref">
+      <div class="head">
+        <div><h2>Žinynas</h2><div class="sub">KTM 950 Adventure (LC8)</div></div>
+      </div>
+      <div id="refBody"></div>
+    </section>
   </main>
 
   <nav>
@@ -343,6 +386,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <span>Patikra</span>
     </button>
+    <button class="tab" data-tab="ref">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5a2 2 0 0 1 2-2h11v18H6a2 2 0 0 1-2-2Z"/><path d="M8 7h6M8 11h6"/></svg>
+      <span>Žinynas</span>
+    </button>
   </nav>
 </div>
 
@@ -355,7 +402,7 @@
   var KEY="motogarage.v1";
   var DEFAULT={
     profile:{name:"Mano KTM",model:"KTM 950 Adventure",year:"2003",photo:null,odometer:0},
-    maintenance:[], rides:[], costs:[],
+    maintenance:[], rides:[], costs:[], reminders:[],
     checklist:[
       {id:"tires",label:"Padangų slėgis ir protektorius",checked:false},
       {id:"chain",label:"Grandinės įtempimas ir tepimas",checked:false},
@@ -403,7 +450,7 @@
   function showTab(name){
     tabs.forEach(function(t){t.classList.toggle("on",t.getAttribute("data-tab")===name);});
     document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
-    var map={garage:"s-garage",maint:"s-maint",rides:"s-rides",costs:"s-costs",check:"s-check"};
+    var map={garage:"s-garage",maint:"s-maint",rides:"s-rides",costs:"s-costs",check:"s-check",ref:"s-ref"};
     $("#"+map[name]).classList.add("active");
     document.querySelector("main").scrollTop=0;
   }
@@ -471,6 +518,47 @@
     $("#stRides").textContent=state.rides.length;
     var total=state.rides.reduce(function(s,r){return s+(+r.distance||0);},0);
     $("#stDist").textContent=fmtN(total)+" km";
+    renderReminders();
+    renderYearStats();
+  }
+  function renderReminders(){
+    var el=$("#reminderList");if(!el)return;
+    var odo=state.profile.odometer||0, now=new Date();
+    if(!state.reminders.length){el.innerHTML='<div class="rem" style="border-left-color:var(--border)"><div class="rl"><div class="rs">Nėra priminimų. Pridėk servisą pagal km arba dokumento datą (pvz. draudimas).</div></div></div>';return;}
+    el.innerHTML=state.reminders.map(function(r){
+      var cls="good",vcls="good",val="",sub="";
+      if(r.type==="km"){
+        var due=(+r.baseKm||0)+(+r.intervalKm||0), left=due-odo;
+        sub="kas "+fmtN(r.intervalKm)+" km · iki "+fmtN(due)+" km";
+        val=(left<0?"vėluoja "+fmtN(-left):"liko "+fmtN(left))+" km";
+        if(left<0){cls="over";vcls="over";}else if(left<500){cls="warn";vcls="warn";}
+      }else{
+        var d=new Date(r.date), days=Math.ceil((d-now)/86400000);
+        sub=fmtDate(r.date);
+        val=(days<0?"vėluoja "+(-days):"liko "+days)+" d.";
+        if(days<0){cls="over";vcls="over";}else if(days<30){cls="warn";vcls="warn";}
+      }
+      return '<div class="rem '+cls+'"><div class="rl"><div class="rt">'+esc(r.label)+'</div><div class="rs">'+sub+'</div></div>'+
+        '<div class="rv '+vcls+'">'+val+'</div>'+
+        '<button class="del" data-del="reminders" data-id="'+r.id+'" aria-label="Ištrinti">'+trash+'</button></div>';
+    }).join("");
+  }
+  function renderYearStats(){
+    var el=$("#yearStats");if(!el)return;
+    var y=new Date().getFullYear();
+    function inY(iso){return (new Date(iso)).getFullYear()===y;}
+    var costs=state.costs.filter(function(c){return inY(c.date);});
+    var mc=maintCosts().filter(function(c){return inY(c.date);});
+    var spent=costs.concat(mc).reduce(function(s,c){return s+(+c.amount||0);},0);
+    var fuelL=0,fuelE=0;
+    state.costs.forEach(function(c){if(c.category==="fuel"&&inY(c.date)){fuelL+=(+c.liters||0);fuelE+=(+c.amount||0);}});
+    var price=fuelL>0?(fuelE/fuelL):0;
+    var km=state.rides.filter(function(r){return inY(r.date);}).reduce(function(s,r){return s+(+r.distance||0);},0);
+    el.innerHTML=
+      '<div class="stat"><div class="k">Išlaidos '+y+'</div><div class="v">'+money(spent)+' €</div></div>'+
+      '<div class="stat"><div class="k">Nuvažiuota</div><div class="v">'+fmtN(km)+' km</div></div>'+
+      '<div class="stat"><div class="k">Vid. kuro kaina</div><div class="v">'+(price>0?price.toFixed(2)+' €/L':"—")+'</div></div>'+
+      '<div class="stat"><div class="k">Kuro sunaudota</div><div class="v">'+(fuelL>0?fmtN(fuelL)+' L':"—")+'</div></div>';
   }
   function doPickPhoto(){
     pickImage(function(d){
@@ -490,7 +578,9 @@
     var el=$("#maintList");
     if(!state.maintenance.length){el.innerHTML=emptyBox("Dar nėra įrašų","Užfiksuok pirmą servisą mygtuku „+ Pridėti“.");return;}
     el.innerHTML=state.maintenance.map(function(m){
-      return '<div class="entry"><div class="body"><div class="t">'+esc(m.service)+'</div>'+
+      return '<div class="entry"><div class="body">'+
+      (m.mcat?'<span class="cat-pill" data-c="'+m.mcat+'">'+(CATS[m.mcat]||m.mcat)+'</span>':'')+
+      '<div class="t">'+esc(m.service)+'</div>'+
       '<div class="m">'+fmtDate(m.date)+' · '+fmtN(m.mileage||0)+' km</div>'+
       (m.notes?'<div class="n">'+esc(m.notes)+'</div>':'')+
       '</div>'+
@@ -503,18 +593,22 @@
     var el=$("#rideList");
     if(!state.rides.length){el.innerHTML=emptyBox("Dar nėra kelionių","Pridėk pirmą važiavimą mygtuku „+ Pridėti“.");return;}
     el.innerHTML=state.rides.map(function(r){
-      return '<div class="ride">'+(r.photo?'<img src="'+r.photo+'" alt="">':'')+
+      var ph=(r.photos&&r.photos.length)?r.photos:(r.photo?[r.photo]:[]);
+      var media=ph.length?'<div class="gallery">'+ph.map(function(d){return '<img src="'+d+'" alt="">';}).join("")+'</div>':"";
+      return '<div class="ride">'+media+
       '<div class="rb"><div class="rtop"><div class="rdate">'+fmtDate(r.date)+'</div>'+
-      '<button class="del" data-del="rides" data-id="'+r.id+'" aria-label="Ištrinti">'+trash+'</button></div>'+
+      '<div style="display:flex;gap:2px">'+
+      '<button class="del" data-editride="'+r.id+'" style="color:var(--accent)" aria-label="Redaguoti">'+pencil+'</button>'+
+      '<button class="del" data-del="rides" data-id="'+r.id+'" aria-label="Ištrinti">'+trash+'</button></div></div>'+
       '<div class="rdist">'+fmtN(r.distance)+' km</div>'+
       (r.notes?'<div class="n" style="margin-top:6px;color:var(--dim)">'+esc(r.notes)+'</div>':'')+
       '</div></div>';
     }).join("");
   }
-  var CATS={fuel:"Kuras",parts:"Dalys",service:"Servisas",insurance:"Draudimas",other:"Kita"};
+  var CATS={fuel:"Kuras",parts:"Dalys",service:"Servisas",tires:"Padangos",insurance:"Draudimas",other:"Kita"};
   function maintCosts(){
     return state.maintenance.filter(function(m){return m.amount>0;}).map(function(m){
-      return {id:"m:"+m.id,date:m.date,category:"service",amount:m.amount,mileage:m.mileage||null,liters:null,notes:m.service,_fromMaint:true};
+      return {id:"m:"+m.id,date:m.date,category:(m.mcat||"service"),amount:m.amount,mileage:m.mileage||null,liters:null,notes:m.service,_fromMaint:true};
     });
   }
   function renderCosts(){
@@ -582,6 +676,13 @@
       if(citem)openSheet("cost",citem);
       return;
     }
+    var edr=e.target.closest("[data-editride]");
+    if(edr){
+      var ridE=edr.getAttribute("data-editride");
+      var ritem=state.rides.filter(function(x){return x.id===ridE;})[0];
+      if(ritem)openSheet("ride",ritem);
+      return;
+    }
     var del=e.target.closest("[data-del]");
     if(del){
       var arr=del.getAttribute("data-del"),id=del.getAttribute("data-id");
@@ -643,9 +744,13 @@
   function openSheet(type,ed){
     if(type==="maint"){
       var sugg=["Alyvos keitimas","Grandinė ir žvaigždutės","Oro filtras","Stabdžių kaladėlės","Padangos","Vožtuvų tarpai"];
+      var mcats={service:"Servisas",parts:"Dalys",tires:"Padangos",other:"Kita"};
+      var mc={v:(ed&&ed.mcat?ed.mcat:"service")};
       sheet.innerHTML=head(ed?"Redaguoti įrašą":"Naujas priežiūros įrašas")+
         fieldText("mSvc","Darbas","pvz. Alyvos keitimas",{val:ed?esc(ed.service):""})+
         '<div class="chips" id="mChips">'+sugg.map(function(s){return '<button class="chip" type="button" data-sug="'+esc(s)+'">'+esc(s)+'</button>';}).join("")+'</div>'+
+        '<label style="display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px">Kategorija</label>'+
+        '<div class="chips" id="mCatChips" style="margin-bottom:14px">'+Object.keys(mcats).map(function(k){return '<button class="chip'+(k===mc.v?" on":"")+'" type="button" data-mcat="'+k+'">'+mcats[k]+'</button>';}).join("")+'</div>'+
         fieldText("mKm","Odometras (km)","pvz. 42000",{num:true,val:ed&&ed.mileage?ed.mileage:""})+
         fieldText("mAmt","Išleista suma (€)","nebūtina, pvz. 45.00",{num:true,val:ed&&ed.amount?ed.amount:""})+
         fieldText("mNote","Pastabos","Dalys, servisas, kas svarbu",{area:true,val:ed?esc(ed.notes):""})+
@@ -653,34 +758,69 @@
         '<button class="save" data-save>Išsaugoti</button>';
       overlay.classList.add("show");bind();
       sheet.querySelectorAll("[data-sug]").forEach(function(c){c.addEventListener("click",function(){sheet.querySelector("#mSvc").value=c.getAttribute("data-sug");});});
+      sheet.querySelectorAll("[data-mcat]").forEach(function(c){c.addEventListener("click",function(){mc.v=c.getAttribute("data-mcat");sheet.querySelectorAll("[data-mcat]").forEach(function(x){x.classList.toggle("on",x===c);});});});
       sheet.querySelector("[data-save]").addEventListener("click",function(){
         var s=sheet.querySelector("#mSvc").value.trim();if(!s){sheet.querySelector("#mSvc").focus();return;}
         var amt=num(sheet.querySelector("#mAmt").value);
         if(ed){
-          ed.service=s;ed.mileage=num(sheet.querySelector("#mKm").value);ed.amount=amt||null;ed.notes=sheet.querySelector("#mNote").value.trim();
+          ed.service=s;ed.mcat=mc.v;ed.mileage=num(sheet.querySelector("#mKm").value);ed.amount=amt||null;ed.notes=sheet.querySelector("#mNote").value.trim();
         }else{
-          state.maintenance.unshift({id:uid(),date:new Date().toISOString(),service:s,mileage:num(sheet.querySelector("#mKm").value),amount:amt||null,notes:sheet.querySelector("#mNote").value.trim()});
+          state.maintenance.unshift({id:uid(),date:new Date().toISOString(),service:s,mcat:mc.v,mileage:num(sheet.querySelector("#mKm").value),amount:amt||null,notes:sheet.querySelector("#mNote").value.trim()});
         }
         sortByDate(state.maintenance);save();renderAll();closeSheet();
       });
     }
-    else if(type==="ride"){
-      var photo={v:null};
-      sheet.innerHTML=head("Nauja kelionė")+
-        fieldText("rKm","Atstumas (km)","pvz. 180",{num:true})+
-        fieldText("rNote","Pastabos","Maršrutas, įspūdžiai, oras",{area:true})+
-        '<label style="display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px">Nuotrauka</label>'+
-        '<div class="photo-pick" id="rPick"><div class="pp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.2"/><path d="M8 6l1.5-2h5L16 6"/></svg>Pridėti nuotrauką</div></div>'+
+    else if(type==="reminder"){
+      var rt={v:"km"};
+      sheet.innerHTML=head("Naujas priminimas")+
+        '<div class="chips" id="rtChips" style="margin-bottom:14px"><button class="chip on" type="button" data-rt="km">Pagal km</button><button class="chip" type="button" data-rt="date">Pagal datą</button></div>'+
+        fieldText("rLabel","Pavadinimas","pvz. Alyvos keitimas / Draudimas",{})+
+        '<div id="rKmWrap">'+fieldText("rInt","Intervalas (km)","pvz. 5000",{num:true})+fieldText("rBase","Nuo kada (odometras km)","pvz. 42000",{num:true})+'</div>'+
+        '<div id="rDateWrap" style="display:none">'+fieldText("rDate","Data (MMMM-MM-DD)","pvz. 2027-03-15",{})+'</div>'+
         '<button class="save" data-save>Išsaugoti</button>';
       overlay.classList.add("show");bind();
+      sheet.querySelectorAll("[data-rt]").forEach(function(c){c.addEventListener("click",function(){
+        rt.v=c.getAttribute("data-rt");
+        sheet.querySelectorAll("[data-rt]").forEach(function(x){x.classList.toggle("on",x===c);});
+        sheet.querySelector("#rKmWrap").style.display=rt.v==="km"?"":"none";
+        sheet.querySelector("#rDateWrap").style.display=rt.v==="date"?"":"none";
+      });});
+      sheet.querySelector("[data-save]").addEventListener("click",function(){
+        var lbl=sheet.querySelector("#rLabel").value.trim();if(!lbl){sheet.querySelector("#rLabel").focus();return;}
+        if(rt.v==="km"){
+          state.reminders.push({id:uid(),type:"km",label:lbl,intervalKm:num(sheet.querySelector("#rInt").value),baseKm:num(sheet.querySelector("#rBase").value)});
+        }else{
+          var dv=sheet.querySelector("#rDate").value.trim();if(!dv){sheet.querySelector("#rDate").focus();return;}
+          state.reminders.push({id:uid(),type:"date",label:lbl,date:new Date(dv).toISOString()});
+        }
+        save();renderGarage();closeSheet();
+      });
+    }
+    else if(type==="ride"){
+      var photos=(ed&&ed.photos)?ed.photos.slice():(ed&&ed.photo?[ed.photo]:[]);
+      function drawThumbs(){
+        var w=sheet.querySelector("#rThumbs");
+        w.innerHTML=photos.map(function(d,i){return '<div class="th"><img src="'+d+'"><button type="button" data-rmph="'+i+'">✕</button></div>';}).join("");
+        w.querySelectorAll("[data-rmph]").forEach(function(b){b.addEventListener("click",function(){photos.splice(+b.getAttribute("data-rmph"),1);drawThumbs();});});
+      }
+      sheet.innerHTML=head(ed?"Redaguoti kelionę":"Nauja kelionė")+
+        fieldText("rKm","Atstumas (km)","pvz. 180",{num:true,val:ed?ed.distance:""})+
+        fieldText("rNote","Pastabos","Maršrutas, įspūdžiai, oras",{area:true,val:ed?esc(ed.notes):""})+
+        '<label style="display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px">Nuotraukos</label>'+
+        '<div class="thumb-row" id="rThumbs"></div>'+
+        '<div class="photo-pick" id="rPick"><div class="pp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.2"/><path d="M8 6l1.5-2h5L16 6"/></svg>Pridėti nuotrauką</div></div>'+
+        '<button class="save" data-save>Išsaugoti</button>';
+      overlay.classList.add("show");bind();drawThumbs();
       sheet.querySelector("#rPick").addEventListener("click",function(){
-        pickImage(function(d){photo.v=d;sheet.querySelector("#rPick").innerHTML='<img src="'+d+'" alt="">';});
+        pickImage(function(d){photos.push(d);drawThumbs();});
       });
       sheet.querySelector("[data-save]").addEventListener("click",function(){
         var km=num(sheet.querySelector("#rKm").value);if(!km){sheet.querySelector("#rKm").focus();return;}
-        state.rides.unshift({id:uid(),date:new Date().toISOString(),distance:km,notes:sheet.querySelector("#rNote").value.trim(),photo:photo.v});
+        var note=sheet.querySelector("#rNote").value.trim();
+        if(ed){ed.distance=km;ed.notes=note;ed.photos=photos.slice();ed.photo=null;}
+        else{state.rides.unshift({id:uid(),date:new Date().toISOString(),distance:km,notes:note,photos:photos.slice(),photo:null});}
         sortByDate(state.rides);
-        if(!save()&&photo.v){state.rides[0].photo=null;save();alert("Kelionė išsaugota, bet nuotrauka per didelė atminčiai — įrašyta be jos.");}
+        if(!save()){var tgt=ed||state.rides[0];tgt.photos=[];save();alert("Kelionė išsaugota, bet nuotraukos per didelės atminčiai — įrašyta be jų.");}
         renderAll();closeSheet();
       });
     }
@@ -714,7 +854,47 @@
   function sortByDate(a){a.sort(function(x,y){return (y.date||"").localeCompare(x.date||"");});}
 
   /* ---------- render all ---------- */
-  function renderAll(){renderGarage();renderMaint();renderRides();renderCosts();renderCheck();}
+  var REF=[
+    {h:"Skysčiai ir talpos",rows:[
+      ["Variklio alyva","SAE 10W-50/15W-50, ~3.0 L (su filtru)"],
+      ["Aušinimo skystis","~2.1 L"],
+      ["Šakės alyva","SAE 5W"],
+      ["Stabdžių skystis","DOT 5.1"],
+      ["Kuro bakas","~22 L (su ~5 L rezervu)"]
+    ]},
+    {h:"Padangų slėgis",rows:[
+      ["Priekinė","2.4 bar"],
+      ["Galinė","2.6–2.8 bar"]
+    ]},
+    {h:"Uždegimas",rows:[
+      ["Žvakės","NGK CR8EK / CR8EIX"],
+      ["Tarpelis","0.7 mm"],
+      ["Tuščioji eiga","1400 ± 100 aps./min"]
+    ]},
+    {h:"Vožtuvai (šaltas variklis)",rows:[
+      ["Išmetimo","0.33 mm"],
+      ["Įsiurbimo","žr. serviso vadovą (pagal modelio metus)"]
+    ]},
+    {h:"Sukimo momentai",rows:[
+      ["Vožtuvų dangčio varžtai","10 Nm"],
+      ["Skirstytuvo tiltelio (dideli)","18 Nm"],
+      ["Skirstytuvo tiltelio (maži)","10 Nm"]
+    ]},
+    {h:"Variklis",rows:[
+      ["Tipas","75° V-twin, DOHC, 942 cm³"],
+      ["Galia","~98 AG @ 8000 aps./min"],
+      ["Grandinė","5/8 x 5/16 X-ring"]
+    ]}
+  ];
+  function renderRef(){
+    var el=$("#refBody");if(!el)return;
+    el.innerHTML=REF.map(function(sec){
+      return '<div class="ref-card"><h4>'+sec.h+'</h4>'+sec.rows.map(function(r){
+        return '<div class="ref-row"><span class="rk">'+r[0]+'</span><span class="rvv">'+r[1]+'</span></div>';
+      }).join("")+'</div>';
+    }).join("")+'<div class="ref-note">Duomenys apytiksliai, surinkti iš viešų šaltinių. Prieš servisą visada pasitikrink savo modelio metų serviso vadovą.</div>';
+  }
+  function renderAll(){renderGarage();renderMaint();renderRides();renderCosts();renderCheck();renderRef();}
 
   /* ---------- PWA / home-screen meta (injected at runtime) ---------- */
   function setMeta(){
