@@ -289,7 +289,7 @@
     <div class="brand">
       <div class="mark">M</div>
       <h1>Moto<span>Garage</span></h1>
-      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v15</em>
+      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v16</em>
     </div>
     <button class="theme-btn" id="themeBtn" aria-label="Perjungti temą">◐</button>
   </div>
@@ -961,37 +961,61 @@
     }
 
     var total=24;
-    var imgs=[];
-    for(var n=1;n<=total;n++){
-      var el=document.createElement("img");
-      el.src="assets/splash-frames/frame_"+("0"+n).slice(-2)+".png";
-      el.alt="";
-      stage.appendChild(el);
-      imgs.push(el);
-    }
-    imgs[0].classList.add("on");
+    var srcs=[];
+    for(var n=1;n<=total;n++){ srcs.push("assets/splash-frames/frame_"+("0"+n).slice(-2)+".png"); }
 
-    var loaded=0;
-    imgs.forEach(function(im){
-      if(im.complete)loaded++;
-      else im.addEventListener("load",function(){loaded++;});
+    // Fully preload every frame (as Image objects) before showing anything,
+    // so playback never stalls on a not-yet-decoded frame.
+    var loadedImgs=new Array(total);
+    var loadedCount=0;
+    var startedPlayback=false;
+
+    function allLoaded(){ return loadedCount>=total; }
+
+    function startPlayback(){
+      if(startedPlayback)return;
+      startedPlayback=true;
+      stage.innerHTML="";
+      var canvas=document.createElement("canvas");
+      canvas.width=300;canvas.height=290;
+      canvas.style.width="100%";canvas.style.height="100%";canvas.style.display="block";
+      var ctx=canvas.getContext("2d");
+      stage.appendChild(canvas);
+
+      var fps=15, frameDur=1000/fps;
+      var frame=0, startTime=null;
+
+      function draw(t){
+        if(startTime===null)startTime=t;
+        var elapsed=t-startTime;
+        var targetFrame=Math.floor(elapsed/frameDur);
+        if(targetFrame>=total){
+          ctx.clearRect(0,0,300,290);
+          ctx.drawImage(loadedImgs[total-1],0,0);
+          hideSplash();
+          return;
+        }
+        if(targetFrame!==frame||elapsed===0){
+          frame=targetFrame;
+          ctx.clearRect(0,0,300,290);
+          ctx.drawImage(loadedImgs[frame],0,0);
+        }
+        requestAnimationFrame(draw);
+      }
+      requestAnimationFrame(draw);
+    }
+
+    srcs.forEach(function(src,idx){
+      var im=new Image();
+      im.onload=function(){ loadedCount++; if(allLoaded())startPlayback(); };
+      im.onerror=function(){ loadedCount++; if(allLoaded())startPlayback(); };
+      im.src=src;
+      loadedImgs[idx]=im;
     });
 
-    var frame=0, fps=15, playing=true;
-    var timer=setInterval(function(){
-      if(!playing)return;
-      imgs[frame].classList.remove("on");
-      frame++;
-      if(frame>=total){
-        playing=false;
-        clearInterval(timer);
-        hideSplash();
-        return;
-      }
-      imgs[frame].classList.add("on");
-    }, 1000/fps);
-
-    setTimeout(hideSplash, 3000);
+    // safety fallback: if loading stalls (slow/broken network), don't trap the user
+    setTimeout(function(){ if(!startedPlayback)hideSplash(); }, 2500);
+    setTimeout(hideSplash, 4500);
   })();
 })();
 </script>
