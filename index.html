@@ -266,14 +266,27 @@
   .hint{font-size:12px;color:var(--faint);margin-top:10px;text-align:center;line-height:1.5}
   input[type=file]{display:none}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  #splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    transition:opacity .5s ease;}
+  #splash.hide{opacity:0;pointer-events:none}
+  #splash video{width:min(78vw,360px);height:auto;display:block}
+  #splash .splash-word{font-size:15px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  #splash .splash-word span{color:var(--accent)}
 </style>
+
+<div id="splash" aria-hidden="true">
+  <video src="assets/ktm-splash.mp4" autoplay muted playsinline webkit-playsinline></video>
+  <div class="splash-word">Moto<span>Garage</span></div>
+</div>
 
 <div class="app">
   <div class="topbar">
     <div class="brand">
       <div class="mark">M</div>
       <h1>Moto<span>Garage</span></h1>
-      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v13</em>
+      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v14</em>
     </div>
     <button class="theme-btn" id="themeBtn" aria-label="Perjungti temą">◐</button>
   </div>
@@ -932,6 +945,23 @@
   setMeta();
 
   renderAll();
+
+  (function initSplash(){
+    var splash=document.getElementById("splash");
+    if(!splash)return;
+    var vid=splash.querySelector("video");
+    var hidden=false;
+    function hideSplash(){
+      if(hidden)return;hidden=true;
+      splash.classList.add("hide");
+      setTimeout(function(){splash.remove();},550);
+    }
+    if(vid){
+      vid.addEventListener("ended",hideSplash);
+      vid.play().catch(function(){hideSplash();});
+    }
+    setTimeout(hideSplash,3200);
+  })();
 })();
 </script>
 </body>
