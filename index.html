@@ -233,6 +233,26 @@
     display:none;align-items:flex-end;justify-content:center}
   .overlay.show{display:flex;animation:ov .2s ease}
   @keyframes ov{from{opacity:0}to{opacity:1}}
+
+  .lightbox{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.94);
+    display:none;flex-direction:column}
+  .lightbox.show{display:flex;animation:ov .18s ease}
+  .lb-top{display:flex;justify-content:space-between;align-items:center;
+    padding:calc(env(safe-area-inset-top) + 12px) 16px 10px;flex:none}
+  .lb-count{color:rgba(255,255,255,.7);font-size:13px;font-variant-numeric:tabular-nums}
+  .lb-close{width:36px;height:36px;border-radius:10px;border:none;background:rgba(255,255,255,.12);
+    color:#fff;display:grid;place-items:center}
+  .lb-stage{flex:1;position:relative;display:flex;align-items:center;overflow:hidden;touch-action:pan-y}
+  .lb-track{display:flex;height:100%;width:100%;will-change:transform}
+  .lb-slide{flex:none;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:0 8px}
+  .lb-slide img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+  .lb-arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;
+    border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;
+    display:grid;place-items:center;z-index:2}
+  .lb-arrow.prev{left:10px} .lb-arrow.next{right:10px}
+  .lb-dots{display:flex;justify-content:center;gap:6px;padding:14px 0 calc(14px + env(safe-area-inset-bottom));flex:none}
+  .lb-dots span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3)}
+  .lb-dots span.on{background:#fff}
   .sheet{width:100%;max-width:520px;max-height:92dvh;overflow-y:auto;background:var(--bg);
     border-radius:20px 20px 0 0;border:1px solid var(--border);border-bottom:none;
     padding:8px 18px calc(24px + env(safe-area-inset-bottom));box-shadow:var(--shadow);
@@ -289,7 +309,7 @@
     <div class="brand">
       <div class="mark">M</div>
       <h1>Moto<span>Garage</span></h1>
-      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v16</em>
+      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v17</em>
     </div>
     <button class="theme-btn" id="themeBtn" aria-label="Perjungti temą">◐</button>
   </div>
@@ -410,6 +430,21 @@
 </div>
 
 <div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
+
+<div class="lightbox" id="lightbox">
+  <div class="lb-top">
+    <span class="lb-count" id="lbCount"></span>
+    <button class="lb-close" id="lbClose" aria-label="Uždaryti">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="lb-stage" id="lbStage">
+    <button class="lb-arrow prev" id="lbPrev" aria-label="Ankstesnė"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <div class="lb-track" id="lbTrack"></div>
+    <button class="lb-arrow next" id="lbNext" aria-label="Kita"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><path d="M9 6l6 6-6 6"/></svg></button>
+  </div>
+  <div class="lb-dots" id="lbDots"></div>
+</div>
 <input type="file" id="filePick" accept="image/*">
 
 <script>
@@ -610,7 +645,7 @@
     if(!state.rides.length){el.innerHTML=emptyBox("Dar nėra kelionių","Pridėk pirmą važiavimą mygtuku „+ Pridėti“.");return;}
     el.innerHTML=state.rides.map(function(r){
       var ph=(r.photos&&r.photos.length)?r.photos:(r.photo?[r.photo]:[]);
-      var media=ph.length?'<div class="gallery">'+ph.map(function(d){return '<img src="'+d+'" alt="">';}).join("")+'</div>':"";
+      var media=ph.length?'<div class="gallery">'+ph.map(function(d,pi){return '<img src="'+d+'" alt="" data-lightbox data-ride="'+r.id+'" data-idx="'+pi+'">';}).join("")+'</div>':"";
       return '<div class="ride">'+media+
       '<div class="rb"><div class="rtop"><div class="rdate">'+fmtDate(r.date)+'</div>'+
       '<div style="display:flex;gap:2px">'+
@@ -710,6 +745,16 @@
       var cid=chk.getAttribute("data-chk");
       state.checklist.forEach(function(i){if(i.id===cid)i.checked=!i.checked;});
       save();renderCheck();return;
+    }
+    var lb=e.target.closest("[data-lightbox]");
+    if(lb){
+      var lrId=lb.getAttribute("data-ride");
+      var lrItem=state.rides.filter(function(x){return x.id===lrId;})[0];
+      if(lrItem){
+        var lrPhotos=(lrItem.photos&&lrItem.photos.length)?lrItem.photos:(lrItem.photo?[lrItem.photo]:[]);
+        openLightbox(lrPhotos, +lb.getAttribute("data-idx"));
+      }
+      return;
     }
   });
   $("#resetChk").addEventListener("click",function(){
@@ -868,6 +913,64 @@
     }
   }
   function sortByDate(a){a.sort(function(x,y){return (y.date||"").localeCompare(x.date||"");});}
+
+  /* ---------- lightbox ---------- */
+  var lbEl=$("#lightbox"), lbTrack=$("#lbTrack"), lbDots=$("#lbDots"), lbCount=$("#lbCount");
+  var lbPhotos=[], lbIndex=0;
+
+  function openLightbox(photos, idx){
+    lbPhotos=photos; lbIndex=idx||0;
+    lbTrack.innerHTML=lbPhotos.map(function(d){return '<div class="lb-slide"><img src="'+d+'" alt=""></div>';}).join("");
+    lbDots.innerHTML=lbPhotos.length>1?lbPhotos.map(function(_,i){return '<span'+(i===lbIndex?' class="on"':'')+'></span>';}).join(""):"";
+    lbEl.classList.add("show");
+    goToLbSlide(lbIndex,false);
+    document.body.style.overflow="hidden";
+  }
+  function closeLightbox(){
+    lbEl.classList.remove("show");
+    document.body.style.overflow="";
+  }
+  function goToLbSlide(i,animate){
+    lbIndex=Math.max(0,Math.min(lbPhotos.length-1,i));
+    lbTrack.style.transition=animate===false?"none":"transform .25s ease";
+    lbTrack.style.transform="translateX(-"+(lbIndex*100)+"%)";
+    lbCount.textContent=lbPhotos.length>1?(lbIndex+1)+" / "+lbPhotos.length:"";
+    var dots=lbDots.querySelectorAll("span");
+    dots.forEach(function(d,i2){d.classList.toggle("on",i2===lbIndex);});
+    $("#lbPrev").style.visibility=lbIndex>0?"visible":"hidden";
+    $("#lbNext").style.visibility=lbIndex<lbPhotos.length-1?"visible":"hidden";
+  }
+
+  $("#lbClose").addEventListener("click",closeLightbox);
+  lbEl.addEventListener("click",function(e){ if(e.target===lbEl)closeLightbox(); });
+  $("#lbPrev").addEventListener("click",function(){goToLbSlide(lbIndex-1);});
+  $("#lbNext").addEventListener("click",function(){goToLbSlide(lbIndex+1);});
+
+  (function(){
+    var stage=$("#lbStage");
+    var sx=0, sy=0, dragging=false;
+    stage.addEventListener("touchstart",function(e){
+      dragging=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+      lbTrack.style.transition="none";
+    },{passive:true});
+    stage.addEventListener("touchmove",function(e){
+      if(!dragging)return;
+      var dx=e.touches[0].clientX-sx;
+      var base=-(lbIndex*stage.offsetWidth);
+      lbTrack.style.transform="translateX("+(base+dx)+"px)";
+    },{passive:true});
+    stage.addEventListener("touchend",function(e){
+      if(!dragging)return; dragging=false;
+      var dx=e.changedTouches[0].clientX-sx;
+      var dy=e.changedTouches[0].clientY-sy;
+      lbTrack.style.transform="";
+      if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)){
+        if(dx<0)goToLbSlide(lbIndex+1); else goToLbSlide(lbIndex-1);
+      }else{
+        goToLbSlide(lbIndex);
+      }
+    });
+  })();
 
   /* ---------- render all ---------- */
   var REF=[
