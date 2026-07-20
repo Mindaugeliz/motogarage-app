@@ -287,20 +287,18 @@
   input[type=file]{display:none}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-  #splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;
-    flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  #splash{position:fixed;inset:0;z-index:9999;background:#0a0a0a;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:20px;
     transition:opacity .5s ease;}
   #splash.hide{opacity:0;pointer-events:none}
-  #splash .splash-stage{width:min(78vw,360px);aspect-ratio:300/290;position:relative}
-  #splash .splash-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
-    opacity:0;display:block}
-  #splash .splash-stage img.on{opacity:1}
-  #splash .splash-word{font-size:15px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  #splash video{width:min(92vw,480px);border-radius:14px;display:block;
+    box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  #splash .splash-word{font-size:15px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.55)}
   #splash .splash-word span{color:var(--accent)}
 </style>
 
 <div id="splash" aria-hidden="true">
-  <div class="splash-stage" id="splashStage"></div>
+  <video id="splashVideo" src="assets/ktm-splash.mp4" autoplay muted playsinline webkit-playsinline></video>
   <div class="splash-word">Moto<span>Garage</span></div>
 </div>
 
@@ -309,7 +307,7 @@
     <div class="brand">
       <div class="mark">M</div>
       <h1>Moto<span>Garage</span></h1>
-      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v18</em>
+      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v19</em>
     </div>
     <button class="theme-btn" id="themeBtn" aria-label="Perjungti temą">◐</button>
   </div>
@@ -1054,77 +1052,18 @@
 
   (function initSplash(){
     var splash=document.getElementById("splash");
-    var stage=document.getElementById("splashStage");
-    if(!splash||!stage)return;
+    var vid=document.getElementById("splashVideo");
+    if(!splash||!vid)return;
     var hidden=false;
     function hideSplash(){
       if(hidden)return;hidden=true;
       splash.classList.add("hide");
       setTimeout(function(){splash.remove();},550);
     }
-
-    var total=24;
-    var srcs=[];
-    for(var n=1;n<=total;n++){ srcs.push("assets/splash-frames/frame_"+("0"+n).slice(-2)+".png"); }
-
-    // Fully preload every frame (as Image objects) before showing anything,
-    // so playback never stalls on a not-yet-decoded frame.
-    var loadedImgs=new Array(total);
-    var loadedCount=0;
-    var startedPlayback=false;
-
-    function allLoaded(){ return loadedCount>=total; }
-
-    function startPlayback(){
-      if(startedPlayback)return;
-      startedPlayback=true;
-      stage.innerHTML="";
-      var canvas=document.createElement("canvas");
-      canvas.width=300;canvas.height=290;
-      canvas.style.width="100%";canvas.style.height="100%";canvas.style.display="block";
-      var ctx=canvas.getContext("2d");
-      stage.appendChild(canvas);
-
-      var fps=18, frameDur=1000/fps;
-      var startTime=null;
-
-      function draw(t){
-        if(startTime===null)startTime=t;
-        var elapsed=t-startTime;
-        var pos=elapsed/frameDur;
-        var frame=Math.floor(pos);
-        if(frame>=total-1){
-          ctx.clearRect(0,0,300,290);
-          ctx.globalAlpha=1;
-          ctx.drawImage(loadedImgs[total-1],0,0);
-          hideSplash();
-          return;
-        }
-        var mix=pos-frame;
-        ctx.clearRect(0,0,300,290);
-        ctx.globalAlpha=1;
-        ctx.drawImage(loadedImgs[frame],0,0);
-        if(mix>0){
-          ctx.globalAlpha=mix;
-          ctx.drawImage(loadedImgs[frame+1],0,0);
-          ctx.globalAlpha=1;
-        }
-        requestAnimationFrame(draw);
-      }
-      requestAnimationFrame(draw);
-    }
-
-    srcs.forEach(function(src,idx){
-      var im=new Image();
-      im.onload=function(){ loadedCount++; if(allLoaded())startPlayback(); };
-      im.onerror=function(){ loadedCount++; if(allLoaded())startPlayback(); };
-      im.src=src;
-      loadedImgs[idx]=im;
-    });
-
-    // safety fallback: if loading stalls (slow/broken network), don't trap the user
-    setTimeout(function(){ if(!startedPlayback)hideSplash(); }, 2500);
-    setTimeout(hideSplash, 4500);
+    vid.addEventListener("ended",hideSplash);
+    vid.play().catch(function(){hideSplash();});
+    // safety fallback in case playback stalls or autoplay is blocked
+    setTimeout(hideSplash,5500);
   })();
 })();
 </script>
