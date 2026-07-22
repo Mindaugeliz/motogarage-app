@@ -307,7 +307,7 @@
     <div class="brand">
       <div class="mark">M</div>
       <h1>Moto<span>Garage</span></h1>
-      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v19</em>
+      <em style="font-style:normal;font-size:10px;color:var(--faint);letter-spacing:.1em;margin-left:2px">v20</em>
     </div>
     <button class="theme-btn" id="themeBtn" aria-label="Perjungti temą">◐</button>
   </div>
@@ -775,7 +775,20 @@
   function fieldText(id,label,ph,opts){opts=opts||{};
     return '<div class="field"><label for="'+id+'">'+label+'</label>'+
       (opts.area?'<textarea id="'+id+'" placeholder="'+ph+'">'+(opts.val||"")+'</textarea>'
+      :opts.date?'<input id="'+id+'" type="date" value="'+(opts.val||"")+'">'
       :'<input id="'+id+'" type="'+(opts.num?"text":"text")+'" '+(opts.num?'inputmode="decimal"':'')+' placeholder="'+ph+'" value="'+(opts.val||"")+'">')+'</div>';
+  }
+  function toDateInputVal(iso){
+    var d=iso?new Date(iso):new Date();
+    if(isNaN(d))d=new Date();
+    var mo=("0"+(d.getMonth()+1)).slice(-2), da=("0"+d.getDate()).slice(-2);
+    return d.getFullYear()+"-"+mo+"-"+da;
+  }
+  function dateInputToISO(val){
+    if(!val)return new Date().toISOString();
+    var parts=val.split("-");
+    var d=new Date(+parts[0], +parts[1]-1, +parts[2], 12, 0, 0);
+    return d.toISOString();
   }
   function bind(){
     var x=sheet.querySelector("[data-x]");if(x)x.addEventListener("click",closeSheet);
@@ -863,6 +876,7 @@
         w.querySelectorAll("[data-rmph]").forEach(function(b){b.addEventListener("click",function(){photos.splice(+b.getAttribute("data-rmph"),1);drawThumbs();});});
       }
       sheet.innerHTML=head(ed?"Redaguoti kelionę":"Nauja kelionė")+
+        fieldText("ridDate","Data","",{date:true,val:toDateInputVal(ed?ed.date:null)})+
         fieldText("rKm","Atstumas (km)","pvz. 180",{num:true,val:ed?ed.distance:""})+
         fieldText("rNote","Pastabos","Maršrutas, įspūdžiai, oras",{area:true,val:ed?esc(ed.notes):""})+
         '<label style="display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px">Nuotraukos</label>'+
@@ -876,8 +890,9 @@
       sheet.querySelector("[data-save]").addEventListener("click",function(){
         var km=num(sheet.querySelector("#rKm").value);if(!km){sheet.querySelector("#rKm").focus();return;}
         var note=sheet.querySelector("#rNote").value.trim();
-        if(ed){ed.distance=km;ed.notes=note;ed.photos=photos.slice();ed.photo=null;}
-        else{state.rides.unshift({id:uid(),date:new Date().toISOString(),distance:km,notes:note,photos:photos.slice(),photo:null});}
+        var rDateIso=dateInputToISO(sheet.querySelector("#ridDate").value);
+        if(ed){ed.distance=km;ed.notes=note;ed.date=rDateIso;ed.photos=photos.slice();ed.photo=null;}
+        else{state.rides.unshift({id:uid(),date:rDateIso,distance:km,notes:note,photos:photos.slice(),photo:null});}
         sortByDate(state.rides);
         if(!save()){var tgt=ed||state.rides[0];tgt.photos=[];save();alert("Kelionė išsaugota, bet nuotraukos per didelės atminčiai — įrašyta be jų.");}
         renderAll();closeSheet();
@@ -887,6 +902,7 @@
       var cat={v:(ed?ed.category:"fuel")};
       sheet.innerHTML=head(ed?"Redaguoti išlaidą":"Nauja išlaida")+
         '<div class="chips" id="cChips" style="margin-bottom:14px">'+Object.keys(CATS).map(function(k){return '<button class="chip'+(k===cat.v?" on":"")+'" type="button" data-cat="'+k+'">'+CATS[k]+'</button>';}).join("")+'</div>'+
+        fieldText("costDate","Data","",{date:true,val:toDateInputVal(ed?ed.date:null)})+
         fieldText("cAmt","Suma (€)","pvz. 45.50",{num:true,val:ed?ed.amount:""})+
         '<div id="cLitersWrap"'+(cat.v==="fuel"?"":' style="display:none"')+'>'+fieldText("cLit","Litrai","pvz. 18.2",{num:true,val:ed&&ed.liters?ed.liters:""})+'</div>'+
         fieldText("cKm","Odometras (km)","nebūtina",{num:true,val:ed&&ed.mileage?ed.mileage:""})+
@@ -901,10 +917,11 @@
       sheet.querySelector("[data-save]").addEventListener("click",function(){
         var amt=num(sheet.querySelector("#cAmt").value);if(!amt){sheet.querySelector("#cAmt").focus();return;}
         var lit=cat.v==="fuel"?num(sheet.querySelector("#cLit").value):0;
+        var cDateIso=dateInputToISO(sheet.querySelector("#costDate").value);
         if(ed){
-          ed.category=cat.v;ed.amount=amt;ed.liters=lit||null;ed.mileage=num(sheet.querySelector("#cKm").value)||null;ed.notes=sheet.querySelector("#cNote").value.trim();
+          ed.category=cat.v;ed.amount=amt;ed.date=cDateIso;ed.liters=lit||null;ed.mileage=num(sheet.querySelector("#cKm").value)||null;ed.notes=sheet.querySelector("#cNote").value.trim();
         }else{
-          state.costs.unshift({id:uid(),date:new Date().toISOString(),category:cat.v,amount:amt,liters:lit||null,mileage:num(sheet.querySelector("#cKm").value)||null,notes:sheet.querySelector("#cNote").value.trim()});
+          state.costs.unshift({id:uid(),date:cDateIso,category:cat.v,amount:amt,liters:lit||null,mileage:num(sheet.querySelector("#cKm").value)||null,notes:sheet.querySelector("#cNote").value.trim()});
         }
         sortByDate(state.costs);save();renderAll();closeSheet();
       });
